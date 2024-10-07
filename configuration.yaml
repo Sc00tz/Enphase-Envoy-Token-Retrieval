@@ -1,0 +1,51 @@
+
+rest:
+  - headers:
+      Authorization: !secret enphase_api
+    verify_ssl: False
+    scan_interval: 15
+    resource: https://envoy.local/ivp/meters/readings
+    sensor:
+
+      - name: "Power Production"
+        value_template: >
+            {% set value = value_json[0].activePower | int(0) %}
+            {% if value  <= 5 -%}
+                0
+            {% elif is_state('sun.sun','below_horizon') %}
+                0
+            {%- else -%}
+                {{ value }}
+            {%- endif %}
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        icon: mdi:solar-panel
+
+      - name: "Power Net"
+        value_template: "{{ value_json[1].activePower | int(0) }}"
+        state_class: measurement
+        device_class: power
+        unit_of_measurement: W
+        icon: mdi:transmission-tower
+        
+      - name: "Energy Production"
+        value_template: "{{ (value_json[0].actEnergyDlvd / 1000 | float(0)) | round(2) }}"
+        device_class: energy
+        unit_of_measurement: kWh
+        state_class: total_increasing
+        icon: mdi:solar-panel
+
+      - name: "Energy Import"
+        value_template: "{{ (value_json[1].actEnergyDlvd / 1000 | float(0)) | round(2) }}"
+        device_class: energy
+        unit_of_measurement: kWh
+        state_class: total_increasing
+        icon: mdi:transmission-tower
+
+      - name: "Energy Export"
+        value_template: "{{ (value_json[1].actEnergyRcvd / 1000 | float(0)) | round(2) }}"
+        device_class: energy
+        unit_of_measurement: kWh
+        state_class: total_increasing
+        icon: mdi:transmission-tower
